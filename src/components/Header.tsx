@@ -1,4 +1,4 @@
-import { Bell, Plus, Search } from 'lucide-react';
+import { Bell, Plus, Search, Home, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/auth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HeaderProps {
   onNewIssue?: () => void;
@@ -14,6 +16,21 @@ interface HeaderProps {
 export const Header = ({ onNewIssue }: HeaderProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch user role
+  const { data: userRole } = useQuery({
+    queryKey: ['user-role', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user?.id!)
+        .single();
+      if (error) return null;
+      return data?.role;
+    },
+    enabled: !!user,
+  });
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -40,6 +57,43 @@ export const Header = ({ onNewIssue }: HeaderProps) => {
               className="pl-10"
             />
           </div>
+        </div>
+
+        {/* Navigation Links */}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => navigate('/')}
+            className="gap-2"
+          >
+            <Home className="h-4 w-4" />
+            <span className="hidden sm:inline">Home</span>
+          </Button>
+          
+          {userRole === 'hod' && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/hod')}
+              className="gap-2"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+          )}
+          
+          {userRole === 'principal' && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => navigate('/principal')}
+              className="gap-2"
+            >
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+          )}
         </div>
 
         {/* Actions */}
