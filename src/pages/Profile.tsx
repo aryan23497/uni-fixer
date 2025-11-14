@@ -80,19 +80,35 @@ const Profile = () => {
     if (!user) return;
     setDeletingId(issueId);
     try {
-      const { error } = await supabase
+      console.log('Attempting to delete issue:', issueId, 'User ID:', user.id);
+
+      const { data: issueCheck } = await supabase
+        .from('issues')
+        .select('reporter_id')
+        .eq('id', issueId)
+        .single();
+
+      console.log('Issue reporter ID:', issueCheck?.reporter_id, 'Current user ID:', user.id);
+
+      if (issueCheck && issueCheck.reporter_id !== user.id) {
+        throw new Error('You are not the reporter of this issue');
+      }
+
+      const { error: delError, data: delData } = await supabase
         .from('issues')
         .delete()
         .eq('id', issueId)
+        .eq('reporter_id', user.id)
         .select();
-      if (error) throw error;
-      const { data: check } = await supabase
-        .from('issues')
-        .select('id')
-        .eq('id', issueId)
-        .limit(1);
+      console.log('Delete response:', { error: delError, data: delData });
+      if (delError) throw delError;
 
-      if (check && check.length > 0) {
+      const { count: remainingCount, error: checkError } = await supabase
+        .from('issues')
+        .select('id', { count: 'exact' })
+        .eq('id', issueId);
+      if (checkError) throw checkError;
+      if ((remainingCount ?? 0) > 0) {
         throw new Error('Delete did not apply due to permissions');
       }
 
