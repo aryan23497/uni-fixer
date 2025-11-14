@@ -1,11 +1,12 @@
 import { Bell, Plus, Search, Home, LayoutDashboard } from 'lucide-react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/lib/auth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,6 +17,8 @@ interface HeaderProps {
 export const Header = ({ onNewIssue }: HeaderProps) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = React.useState<string>(searchParams.get('q') || '');
 
   // Fetch user role
   const { data: userRole } = useQuery({
@@ -53,8 +56,16 @@ export const Header = ({ onNewIssue }: HeaderProps) => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search issues by item ID..."
+              placeholder="Search by room no or item id"
               className="pl-10"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const q = query.trim();
+                  navigate(q ? `/?q=${encodeURIComponent(q)}` : '/');
+                }
+              }}
             />
           </div>
         </div>
@@ -124,7 +135,7 @@ export const Header = ({ onNewIssue }: HeaderProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-popover">
               <DropdownMenuItem onClick={() => navigate('/profile')}>
-                Profile
+                My Issued Reports
               </DropdownMenuItem>
               <DropdownMenuItem onClick={signOut}>
                 Logout

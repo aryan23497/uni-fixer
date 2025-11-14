@@ -55,6 +55,7 @@ const PrincipalDashboard = () => {
       const { data, error } = await supabase
         .from('departments')
         .select('*')
+        .in('code', ['CS', 'EE', 'ME', 'HU'])
         .order('name');
       if (error) throw error;
       return data;

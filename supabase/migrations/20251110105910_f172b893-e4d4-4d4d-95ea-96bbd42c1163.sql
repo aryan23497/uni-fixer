@@ -95,9 +95,9 @@ AS $$
 $$;
 
 -- RLS Policies for departments (readable by all authenticated users)
-CREATE POLICY "Departments are viewable by authenticated users"
+CREATE POLICY "Departments are viewable by anyone"
   ON public.departments FOR SELECT
-  TO authenticated
+  TO public
   USING (true);
 
 -- RLS Policies for profiles
@@ -152,6 +152,11 @@ CREATE POLICY "Principals can update any issue"
   ON public.issues FOR UPDATE
   TO authenticated
   USING (public.has_role(auth.uid(), 'principal'));
+
+CREATE POLICY "Users can delete their own issues"
+  ON public.issues FOR DELETE
+  TO authenticated
+  USING (reporter_id = auth.uid());
 
 -- RLS Policies for upvotes
 CREATE POLICY "Users can view upvotes"
@@ -227,10 +232,9 @@ CREATE TRIGGER update_issues_updated_at
 -- Insert some default departments
 INSERT INTO public.departments (name, code) VALUES
   ('Computer Science', 'CS'),
-  ('Electronics', 'EC'),
+  ('Electrical', 'EE'),
   ('Mechanical', 'ME'),
-  ('Civil', 'CE'),
-  ('Electrical', 'EE');
+  ('Humanities', 'HU');
 
 -- Create storage bucket for issue photos
 INSERT INTO storage.buckets (id, name, public) VALUES ('issue-photos', 'issue-photos', true);

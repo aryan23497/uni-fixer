@@ -12,9 +12,12 @@ interface IssueCardProps {
   upvoteCount: number;
   hasUpvoted: boolean;
   onUpvoteChange: () => void;
+  canDelete?: boolean;
+  onDelete?: () => void;
+  deleting?: boolean;
 }
 
-export const IssueCard = ({ issue, upvoteCount, hasUpvoted, onUpvoteChange }: IssueCardProps) => {
+export const IssueCard = ({ issue, upvoteCount, hasUpvoted, onUpvoteChange, canDelete, onDelete, deleting }: IssueCardProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -139,6 +142,17 @@ export const IssueCard = ({ issue, upvoteCount, hasUpvoted, onUpvoteChange }: Is
                 <span>{formatDistanceToNow(new Date(issue.reported_at), { addSuffix: true })}</span>
               </div>
             </div>
+            {canDelete && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive"
+                onClick={onDelete}
+                disabled={loading || deleting}
+              >
+                Delete
+              </Button>
+            )}
           </div>
 
           {issue.description && (

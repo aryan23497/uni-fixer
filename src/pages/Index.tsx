@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { IssueCard } from '@/components/IssueCard';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { Upload } from 'lucide-react';
 
 const Index = () => {
@@ -22,6 +23,8 @@ const Index = () => {
   const [sortBy, setSortBy] = useState<'upvotes' | 'recent'>('upvotes');
   const [isNewIssueOpen, setIsNewIssueOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const searchQuery = (searchParams.get('q') || '').trim();
 
   // Form state
   const [roomNo, setRoomNo] = useState('');
@@ -44,6 +47,7 @@ const Index = () => {
       const { data, error } = await supabase
         .from('departments')
         .select('*')
+        .in('code', ['CS', 'EE', 'ME', 'HU'])
         .order('name');
       if (error) throw error;
       return data;
@@ -52,7 +56,7 @@ const Index = () => {
 
   // Fetch issues with upvote counts
   const { data: issues, refetch } = useQuery({
-    queryKey: ['issues', sortBy],
+    queryKey: ['issues', sortBy, searchQuery],
     queryFn: async () => {
       let query = supabase
         .from('issues')
@@ -62,6 +66,11 @@ const Index = () => {
           departments(name, code),
           upvotes(count)
         `);
+
+      if (searchQuery) {
+        const pattern = `%${searchQuery}%`;
+        query = query.or(`room_no.ilike.${pattern},item_id.ilike.${pattern}`);
+      }
 
       if (sortBy === 'recent') {
         query = query.order('reported_at', { ascending: false });
@@ -75,7 +84,7 @@ const Index = () => {
         data.map(async (issue) => {
           const { count } = await supabase
             .from('upvotes')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact' })
             .eq('issue_id', issue.id);
 
           const { data: userUpvote } = await supabase
@@ -83,7 +92,7 @@ const Index = () => {
             .select('id')
             .eq('issue_id', issue.id)
             .eq('user_id', user?.id!)
-            .single();
+            .maybeSingle();
 
           return {
             ...issue,
@@ -127,7 +136,33 @@ const Index = () => {
         photoUrl = publicUrl;
       }
 
-      // Create issue
+      const { data: existing } = await supabase
+        .from('issues')
+        .select('id')
+        .eq('item_id', itemId)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        toast({
+          title: 'Item already exists',
+          description: 'An issue for this item ID already exists.',
+          action: (
+            <ToastAction
+              altText="View similar"
+              onClick={() => {
+                setIsNewIssueOpen(false);
+                resetForm();
+                navigate(`/?q=${encodeURIComponent(itemId)}`);
+              }}
+            >
+              Similar results
+            </ToastAction>
+          ),
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { error } = await supabase.from('issues').insert({
         reporter_id: user?.id,
         department_id: departmentId,
