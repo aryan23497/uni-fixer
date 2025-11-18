@@ -202,10 +202,10 @@ const Auth = () => {
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
                   <Select value={departmentId} onValueChange={setDepartmentId} required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select department" />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select your department" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover">
+                    <SelectContent>
                       {departments?.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name} ({dept.code})
