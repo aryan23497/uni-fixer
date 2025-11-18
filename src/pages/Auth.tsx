@@ -123,7 +123,7 @@ const Auth = () => {
         <ThemeToggle />
       </div>
 
-      <Card className="w-full max-w-md shadow-elevated border-border/50">
+      <Card className="w-full max-w-md shadow-elevated border-border/50 overflow-visible">
         <CardHeader className="space-y-1 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
@@ -202,10 +202,10 @@ const Auth = () => {
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
                   <Select value={departmentId} onValueChange={setDepartmentId} required>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background">
                       <SelectValue placeholder="Select department" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover">
+                    <SelectContent>
                       {departments?.map((dept) => (
                         <SelectItem key={dept.id} value={dept.id}>
                           {dept.name} ({dept.code})
